@@ -1,0 +1,62 @@
+buildscript {
+  repositories {
+    mavenCentral()
+    maven {
+      name = 'GradleRIO'
+      url = 'http://dev.imjac.in/maven'
+    }
+  }
+  dependencies {
+    classpath group: 'jaci.openrio.gradle', name: 'GradleRIO', version: '+'			//Change this line if you wish to Update GradleRIO
+  }
+}
+
+apply plugin: 'java'
+dependencies {
+  compile files('lib/navx_frc.jar')
+}
+
+apply plugin: 'idea'
+
+apply plugin: 'GradleRIO'
+
+gradlerio.robotClass = 'org.usfirst.frc.team5687.robot.Robot'       //The class for the main Robot Class
+gradlerio.team = '5687'                                             //The FRC team number
+gradlerio.rioIP = '10.56.87.2'                                      //The IP address of the RIO
+
+def robotManifest = {
+  attributes 'Main-Class': 'edu.wpi.first.wpilibj.RobotBase'
+  attributes 'Robot-Class': gradlerio.robotClass
+}
+
+jar {
+  from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+  manifest robotManifest
+}
+
+task genJavadoc(type: Jar, dependsOn: javadoc) {
+  classifier = 'javadoc'
+  from javadoc.destinationDir
+}
+
+artifacts {
+  archives genJavadoc
+}
+
+task gitInfo(dependsOn: build) {
+  description = 'Logs git branch and version when build'
+  def cmd = 'git rev-parse --abbrev-ref HEAD'
+  project.ext.branch = cmd.execute().text.trim()
+  cmd = 'git rev-parse --short HEAD'
+  project.ext.revision = cmd.execute().text.trim()
+
+  println '[branch] ' + project.branch
+  println '[commit] ' + project.revision
+}
+
+task access << {
+  description = 'Grants access permission to robot code'
+  def robot = 'Christine'
+  println 'User-agent: ' + robot + ' \nDisallow: '
+  println '\nUser-agent: * \nDisallow: /'
+}
